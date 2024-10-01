@@ -1,6 +1,6 @@
 # socialmarkets
 
-![a social market](https://github.com/flintwinters/socialmarkets/blob/main/market.gif =250x250)
+<img src="https://github.com/flintwinters/socialmarkets/blob/main/market.gif" width="300" height="300" />
 
 This is a toy project exploring an analogy between market forces and spring physics.
 
