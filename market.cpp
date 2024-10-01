@@ -35,6 +35,9 @@ dbl magnitude(belief a, belief b) {
 dbl uniform(dbl a, dbl b) {
     return ((dbl) rand() / (dbl) RAND_MAX) * (b-a)+a; 
 }
+dbl uniform(dbl b) {
+    return uniform(0, b); 
+}
 vector<Node*> all;
 class Node {
 private:
@@ -122,10 +125,11 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(512, 512), "market");
-    for (int i = 0; i < 10; i++) {
-        new Node(uniform(1, 4), uniform(1, 4), sf::Color(rand()%255, rand()%255, rand()%255));
+    int lightness = 200;
+    for (int i = 0; i < 20; i++) {
+        new Node(uniform(5), uniform(5), sf::Color(rand()%lightness+lightness, rand()%lightness+lightness, rand()%lightness+lightness));
     }
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 40; i++) {
         all[rand()%all.size()]->addmutual(all[rand()%all.size()]);
     }
     while (window.isOpen()) {
