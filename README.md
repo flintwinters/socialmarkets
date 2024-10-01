@@ -1,5 +1,7 @@
 # socialmarkets
 
+![a social market](https://github.com/flintwinters/socialmarkets/blob/main/market.gif =250x250)
+
 This is a toy project exploring an analogy between market forces and spring physics.
 
 Each node represents some resource, and an edge represents a market in which one resource is exchanged for another.
