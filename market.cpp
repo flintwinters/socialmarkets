@@ -98,11 +98,8 @@ public:
     
     void applyforce() {
         dbl m;
-        liteprint();
         for (int i = 0; i < to.size(); i++) {
-            // if (ID == to[i]->ID) {continue;}
             m = magnitude(p, to[i]->p);
-            printf("%d %d %d\n", ID, i, to[i]->ID);
             for (int j = 0; j < a.size(); j++) {
                 a[j] = ((p[j]-to[i]->p[j])/m)*impressionable(m);
             }
@@ -125,22 +122,6 @@ public:
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(512, 512), "market");
-    // Node
-    //     n(0, 1, sf::Color::Red),
-    //     m(1, 1, sf::Color::Green),
-    //     o(2, 2, sf::Color::Blue),
-    //     z(2, 3, sf::Color::Magenta),
-    //     p(1.5, 1.5, sf::Color::White);
-    // o.addmutual(&m);
-    // o.addmutual(&n);
-    // o.addmutual(&p);
-    // p.addmutual(&n);
-    // n.addmutual(&m);
-    // z.addmutual(&m);
-    // z.addmutual(&p);
-    // z.addmutual(&o);
-    // z.addmutual(&n);
-    // m.addmutual(&p);
     for (int i = 0; i < 10; i++) {
         new Node(uniform(1, 4), uniform(1, 4), sf::Color(rand()%255, rand()%255, rand()%255));
     }
@@ -163,11 +144,9 @@ int main() {
             for (int i = 0; i < node->v.size(); i++) {
                 node->v[i] += uniform(-0.001, 0.001); 
             }
-            // node->liteprint();
         }
         window.display();
         window.setFramerateLimit(60);
     }
     printf("\n");
-    // printf("%f\n", magnitude(n.b, m.b));
 }

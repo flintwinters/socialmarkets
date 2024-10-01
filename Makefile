@@ -1,3 +1,3 @@
 all:
-	gcc market.cpp -lstdc++ -lm -g -o outmarket;
+	gcc market.cpp -lsfml-graphics -lsfml-system -lsfml-window -lstdc++ -lm -g -o outmarket;
 	./outmarket;
