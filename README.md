@@ -1,6 +1,6 @@
 # socialmarkets
 
-<img src="https://github.com/flintwinters/socialmarkets/blob/main/market.gif" width="300" height="300" />
+<img src="https://github.com/flintwinters/socialmarkets/blob/main/market.png" width="300" height="300" />
 
 This is a toy project exploring an analogy between market forces and spring physics.
 
