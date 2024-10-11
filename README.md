@@ -2,7 +2,7 @@
 
 <img src="https://github.com/flintwinters/socialmarkets/blob/main/market.png" height="300" />
 
-<img src="https://github.com/flintwinters/socialmarkets/blob/main/gif" height="300" />
+<img src="https://github.com/flintwinters/socialmarkets/blob/main/market.gif" height="300" />
 
 This is a toy project exploring an analogy between market forces and spring physics.
 
