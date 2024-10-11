@@ -2,6 +2,8 @@
 
 <img src="https://github.com/flintwinters/socialmarkets/blob/main/market.png" height="300" />
 
+<img src="https://github.com/flintwinters/socialmarkets/blob/main/gif" height="300" />
+
 This is a toy project exploring an analogy between market forces and spring physics.
 
 Each node represents some resource, and an edge represents a market in which one resource is exchanged for another.
