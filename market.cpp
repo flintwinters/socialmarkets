@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <string>
 #include <array>
+#include <random>
 #include <vector>
 #include <stdio.h>
 #include <math.h>
@@ -14,10 +15,11 @@
 
 using namespace std;
 #define bnum 2
-typedef double dbl;
+typedef float dbl;
 typedef array<dbl, bnum> belief;
 typedef sf::Vector2f v2f;
 class Node;
+class Edge;
 belief merge(belief a, belief b, dbl (*f)(dbl, dbl)) {
     belief c;
     for (int i = 0; i < a.size(); i++) {c[i] = f(a[i], b[i]);}
@@ -29,31 +31,41 @@ dbl fold(belief a, dbl (*f)(dbl, dbl)) {
     return d;
 }
 dbl magnitude(belief a, belief b) {
-    belief c = merge(a, b, [](dbl n, dbl m) {return pow(n - m, 2);});
+    belief c = merge(a, b, [](dbl n, dbl m) {return (dbl) pow(n - m, 2);});
     return sqrt(abs(fold(c, [](dbl n, dbl m)-> dbl {return n + m;})));
 }
+default_random_engine eng;
 dbl uniform(dbl a, dbl b) {
-    return ((dbl) rand() / (dbl) RAND_MAX) * (b-a)+a; 
+    uniform_real_distribution<double> d(a, b);
+    return d(eng);
 }
-dbl uniform(dbl b) {
-    return uniform(0, b); 
-}
-vector<Node*> all;
-class Node {
-private:
-    float radius = 4;
+float scale = 10;
+float xshift = 256;
+float yshift = 256;
+float radius = 4;
+vector<Node*> alln;
+vector<Edge*> alle;
+class Edge {
 public:
     int ID;
-    vector<Node*> to, from;
-    belief p, v, a = { };
+    Node* from, *to;
     dbl comfy = 1;
     dbl bounce = 0.5;
-    dbl friction = 0.1;
+    sf::RectangleShape fshape, tshape;
+    Edge(Node* from, Node* to);
+    dbl impressionable(dbl x);
+    void draw();
+};
+class Node {
+public:
+    int ID;
+    vector<Edge*> E;
+    belief p, v, a = { };
+    dbl mass = 0.1;
     sf::CircleShape shape;
-    vector<sf::RectangleShape> edges;
     Node() {
-        all.push_back(this);
-        ID = all.size();
+        alln.push_back(this);
+        ID = alln.size();
         shape.setRadius(radius);
         shape.setFillColor(sf::Color::White);
     }
@@ -62,38 +74,22 @@ public:
         p[1] = y;
         shape.setFillColor(c);
     }
-    dbl impressionable(dbl x) {
-        if (x < comfy) {return -bounce*(x-comfy)/4;}
-        return -bounce*(x-comfy)/100;
-    }
-    Node* addmutual(Node* n) {
-        addfrom(n);
-        addto(n);
-        return this;
-    }
-    void addto(Node* n) {
-        n->to.push_back(this);
-        from.push_back(n);
-    }
-    void addfrom(Node* n) {
-        to.push_back(n);
-        n->from.push_back(this);
+    
+    Edge* addedge(Node* n) {
+        E.push_back(new Edge(this, n));
+        return E[E.size()-1];
     }
     void print() {
         string s = to_string(ID) + ": ";
         for (dbl d : p) {s += to_string(d).substr(0, 3) + " ";}
-        s += "\n" + to_string(to.size()) + " to -> ";
-        for (Node* t : to) {s += to_string(t->ID) + " ";}
-        s += "\n" + to_string(from.size()) + " fo -> ";
-        for (Node* f : from) {s += to_string(f->ID) + " ";}
+        s += "\n" + to_string(E.size()) + " fo -> ";
+        for (Edge* e : E) {s += to_string(e->ID) + " ";}
         printf("%s\n\n", s.c_str());
     }
     void liteprint() {
         string s = to_string(ID) + ": ";
-        s += " " + to_string(to.size()) + " to -> ";
-        for (Node* t : to) {s += to_string(t->ID) + " ";}
-        s += " " + to_string(from.size()) + " fo -> ";
-        for (Node* f : from) {s += to_string(f->ID) + " ";}
+        s += " " + to_string(E.size()) + " fo -> ";
+        for (Edge* e : E) {s += to_string(e->ID) + " ";}
         s += "\t||| ";
         for (dbl d : p) {s += to_string(d).substr(0, 3) + " ";}
         printf("%s\n", s.c_str());
@@ -101,56 +97,96 @@ public:
     
     void applyforce() {
         dbl m;
-        for (int i = 0; i < to.size(); i++) {
-            m = magnitude(p, to[i]->p);
+        for (int i = 0; i < E.size(); i++) {
+            m = magnitude(p, E[i]->to->p);
             for (int j = 0; j < a.size(); j++) {
-                a[j] = ((p[j]-to[i]->p[j])/m)*impressionable(m);
+                a[j] = ((p[j]-E[i]->to->p[j])/m)*E[i]->impressionable(m);
             }
         }
         for (int i = 0; i < p.size(); i++) {p[i] += v[i];}
-        for (int i = 0; i < p.size(); i++) {v[i] += a[i]-friction*v[i];}
+        for (int i = 0; i < p.size(); i++) {v[i] += a[i]-v[i]/mass;}
     }
     void draw() {
-        shape.setPosition(v2f(p[0]*100, p[1]*100));
-        edges = vector<sf::RectangleShape>();
-        for (int i = 0; i < to.size(); i++) {
-            edges.push_back(sf::RectangleShape());
-            edges[i].setSize(v2f(1.f, 40*magnitude(p, to[i]->p)));
-            edges[i].setPosition(v2f(p[0]*100+radius, p[1]*100+radius));
-            edges[i].setFillColor(shape.getFillColor());
-            edges[i].setRotation(90+180*atan2(p[1]-to[i]->p[1], p[0]-to[i]->p[0])/M_PI);
-        }
+        dbl r = mass*radius*scale/40;
+        shape.setRadius(r);
+        shape.setPosition(v2f(xshift+(p[0])*scale, yshift+(p[1])*scale));
     }
 };
+Edge::Edge(Node* from, Node* to) : from(from), to(to) {
+    alle.push_back(this);
+    ID = alle.size();
+}
+dbl Edge::impressionable(dbl x) {
+    comfy -= .1*(comfy-x);
+    return -bounce*(x-comfy)/10;
+}
+void Edge::draw() {
+    dbl m = magnitude(from->p, to->p);
+    dbl w = ((0.5/bounce)+0.5)*scale/20;
+    dbl l = m*((50/comfy))*scale/10;
+    fshape.setSize(v2f(w, l));
+    fshape.setPosition(v2f(xshift+from->p[0]*scale+from->shape.getRadius(), yshift+from->p[1]*scale+from->shape.getRadius()));
+    fshape.setFillColor(from->shape.getFillColor());
+    fshape.setRotation(90+180*atan2(from->p[1]-to->p[1], from->p[0]-to->p[0])/M_PI);
+
+    tshape.setSize(v2f(w, l));
+    tshape.setPosition(v2f(xshift+to->p[0]*scale+to->shape.getRadius(), yshift+to->p[1]*scale+to->shape.getRadius()));
+    tshape.setFillColor(to->shape.getFillColor());
+    tshape.setRotation(-90+180*atan2(from->p[1]-to->p[1], from->p[0]-to->p[0])/M_PI);
+}
 
 int main() {
+    for (int i = 0; i < 10; i++) {
+        Node* n = new Node(uniform(-1, 1), uniform(-1, 1), sf::Color(rand()%255, rand()%255, rand()%255));
+        n->mass = uniform(1, 2);
+    }
+    for (int i = 0; i < 10; i++) {
+        int a = rand()%alln.size();
+        int b;
+        while (a == (b = rand()%alln.size()));
+        Edge* e = alln[a]->addedge(alln[b]);
+        e->bounce = uniform(0.1, 3);
+        e->comfy = uniform(0.1, 3);
+    }
+    for (int i = 0; i < 100000; i++) {
+        for (Node* node : alln) {node->applyforce();}
+        for (Node* node : alln) {
+            for (int i = 0; i < node->v.size(); i++) {
+                node->v[i] += uniform(-0.001, 0.001);
+            }
+        }
+    }
     sf::RenderWindow window(sf::VideoMode(512, 512), "market");
-    int lightness = 200;
-    for (int i = 0; i < 20; i++) {
-        new Node(uniform(5), uniform(5), sf::Color(rand()%lightness+lightness, rand()%lightness+lightness, rand()%lightness+lightness));
-    }
-    for (int i = 0; i < 40; i++) {
-        all[rand()%all.size()]->addmutual(all[rand()%all.size()]);
-    }
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {window.close();}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {scale *= 1.1;}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {scale /= 1.1;}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {yshift += 10;}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {xshift += 10;}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {yshift -= 10;}
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {xshift -= 10;}
         }
         window.clear(sf::Color::Black);
-        for (Node* node : all) {node->applyforce();}
-        for (Node* node : all) {node->draw();}
-        for (Node* node : all) {
-            for (sf::RectangleShape r : node->edges) {window.draw(r);}
-        }
-        for (Node* node : all) {window.draw(node->shape);}
-        for (Node* node : all) {
-            for (int i = 0; i < node->v.size(); i++) {
-                node->v[i] += uniform(-0.001, 0.001); 
+        for (int i = 0; i < 1; i++) {
+            for (Node* node : alln) {node->applyforce();}
+            for (Node* node : alln) {
+                for (int i = 0; i < node->v.size(); i++) {
+                    node->v[i] += uniform(-0.001, 0.001);
+                }
             }
         }
+        for (Node* node : alln) {node->draw();}
+        for (Edge* e : alle) {e->draw();}
+        for (Node* node : alln) {
+            for (Edge* e : alle) {
+                window.draw(e->fshape);
+                window.draw(e->tshape);
+            }
+        }
+        for (Node* node : alln) {window.draw(node->shape);}
         window.display();
         window.setFramerateLimit(60);
     }
-    printf("\n");
 }
